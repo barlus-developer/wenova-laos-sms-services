@@ -66,17 +66,17 @@ func TestSendMethodsBuildRequest(t *testing.T) {
 		{
 			name: "SendCustom",
 			send: func(c *Client) (*SendResult, error) {
-				return c.SendCustom(context.Background(), "WNV-Promo", "2012345678", "50% off!")
+				return c.SendCustom(context.Background(), "Promo", "2012345678", "50% off!")
 			},
-			wantHdr: "WNV-Promo",
+			wantHdr: "Promo",
 			usePkg:  true,
 		},
 		{
-			name: "SendCustomWallet",
+			name: "SendCustomTxn",
 			send: func(c *Client) (*SendResult, error) {
-				return c.SendCustom(context.Background(), "WNV-Txn", "2012345678", "Payment received")
+				return c.SendCustom(context.Background(), "Txn", "2012345678", "Payment received")
 			},
-			wantHdr: "WNV-Txn",
+			wantHdr: "Txn",
 			usePkg:  false,
 		},
 	}
@@ -187,6 +187,24 @@ func TestSendBusinessError(t *testing.T) {
 	}
 }
 
+func TestSendNullResultCode(t *testing.T) {
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"success":true,"data":{"resultCode":null,"resultDesc":null}}`)
+	})
+
+	res, err := c.SendOTP(context.Background(), "2012345678", "msg")
+	if err != nil {
+		t.Fatalf("empty resultCode means accepted, got error: %v", err)
+	}
+	if res == nil {
+		t.Fatal("expected a result")
+	}
+	if res.ResultCode != "" {
+		t.Errorf("ResultCode = %q, want empty", res.ResultCode)
+	}
+}
+
 func TestSendEmptyData(t *testing.T) {
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -194,12 +212,8 @@ func TestSendEmptyData(t *testing.T) {
 	})
 
 	res, err := c.SendOTP(context.Background(), "2012345678", "msg")
-	if err == nil {
-		t.Fatal("expected GatewayError for empty resultCode")
-	}
-	var gwErr *GatewayError
-	if !errors.As(err, &gwErr) {
-		t.Fatalf("expected *GatewayError, got %T", err)
+	if err != nil {
+		t.Fatalf("empty data should be accepted, got error: %v", err)
 	}
 	if res == nil {
 		t.Fatal("expected a result even when data is empty")

@@ -114,10 +114,10 @@ func (c *Client) send(ctx context.Context, header, phoneNumber, message string) 
 		Data:       out.Data,
 	}
 
-	// A successful SMS normally has resultCode "20000". Anything else —
-	// including an empty result (still processing) — is reported as a
-	// gateway error so the caller can inspect it.
-	if result.ResultCode != "20000" {
+	// "20000" is success. An empty resultCode means the gateway accepted
+	// the message but has not returned a final result yet (queued,
+	// scheduled, or processing) — treat that as accepted, not rejected.
+	if result.ResultCode != "" && result.ResultCode != "20000" {
 		return result, &GatewayError{
 			ResultCode: result.ResultCode,
 			ResultDesc: result.ResultDesc,
