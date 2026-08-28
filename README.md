@@ -41,7 +41,7 @@ Sender header: `WNV-info` — handled for you.
 ### Send with a custom sender header
 
 ```go
-_, err := wnv.SendCustom(context.Background(), "WNV-Promo", "2012345678", "50% off this weekend!")
+_, err := wnv.SendCustom(context.Background(), "example-Promo", "2012345678", "50% off this weekend!")
 ```
 
 You provide the registered sender ID yourself.
